@@ -2,12 +2,11 @@
  * Application: GaussianBlur
  * Solution:    GaussianBlur
  * Copyright:   Nk185. 2015 - 2016
- * startDate:   01.01.2016
- * endDate:     --.02.2016
  * Version:     00.42.16
  * Modifications log:
  *  17.02.16 - Useless code removed
  *  16.02.16 - Pre-processing info 
+ * Watching next lines you automatically agree with this: https://goo.gl/M5bjl6
  */
 
 using System;
@@ -414,7 +413,7 @@ namespace GaussianBlur
                     if ((userBlurRect[0] + userBlurRect[2] <= bmp.Width) && (userBlurRect[1] + userBlurRect[3] <= bmp.Width) && (userBlurRect[0] >= 0) & (userBlurRect[1] >= 0))
                         blurRect = new Rectangle(userBlurRect[0], userBlurRect[1], userBlurRect[2] - 1, userBlurRect[3] - 1);
                     else
-                        throw new Exception("Uncorrect rectangle value(s). Please, restart application.");
+                        throw new Exception("Incorrect rectangle value(s). Please, restart application.");
                 }
                 else if (userRectParams == "$gb_blurAll")                
                     blurRect = new Rectangle(0, 0, bmp.Width - 1, bmp.Height - 1);                
@@ -465,15 +464,15 @@ namespace GaussianBlur
                     goto Again;
                 }
                 else
-                    throw new Exception("Uncorrect rectangle value(s). Please, restart application.");
+                    throw new Exception("Incorrect rectangle value(s). Please, restart application.");
                 #endregion
 
                 Console.WriteLine("--------------------------------- [Summary] ---------------------------------");
-                Console.WriteLine("> Choosed image: {0} ({1} x {2})", inputFileAddr, bmp.Width, bmp.Height);
+                Console.WriteLine("> Chosen image: {0} ({1} x {2})", inputFileAddr, bmp.Width, bmp.Height);
                 Console.WriteLine("> Image pixel format: {0}", bmp.PixelFormat);
-                Console.WriteLine("> Choosed blur radius: {0}", userBlurRadius);
-                Console.WriteLine("> Choosed highlighting coefficient: {0}", highlightingCoef);
-                Console.WriteLine("> Choosed blur rectangle: x = {0} | y = {1} | width = {2} | height = {3}", blurRect.X, blurRect.Y, blurRect.Width + 1, blurRect.Height + 1);
+                Console.WriteLine("> Chosen blur radius: {0}", userBlurRadius);
+                Console.WriteLine("> Chosen highlighting coefficient: {0}", highlightingCoef);
+                Console.WriteLine("> Chosen blur rectangle: x = {0} | y = {1} | width = {2} | height = {3}", blurRect.X, blurRect.Y, blurRect.Width + 1, blurRect.Height + 1);
                 Console.WriteLine("\n> Output file name: {0}", outputFileAddr);
                 Console.WriteLine("-----------------------------------------------------------------------------");
                 Console.Write("> If it's correct press '1', otherwise press another key: ");

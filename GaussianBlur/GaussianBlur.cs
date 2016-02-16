@@ -5,8 +5,7 @@
  * startDate:   01.01.2016
  * endDate:     --.02.2016
  * Version:     00.42.16
- * Modification date: 16.02.16
- * Modification log:
+ * Modifications log:
  *  16.02.16 - Pre-processing info
  */
 

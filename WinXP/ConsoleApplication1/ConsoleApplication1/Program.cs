@@ -2,12 +2,11 @@
  * Application: GaussianBlur
  * Solution:    GaussianBlur
  * Copyright:   Nk185. 2015 - 2016
- * startDate:   01.01.2016
- * endDate:     --.02.2016
  * Version:     00.42.16
- * Modification date: 15.02.16
- * Last modification:
- *  Highlighting function and dialogue to choose it.
+ * Modifications log:
+ *  17.02.16 - Useless code removed
+ *  16.02.16 - Pre-processing info 
+ * Watching next lines you automatically agree with this: https://goo.gl/M5bjl6
  */
 
 using System;
@@ -416,7 +415,7 @@ namespace GaussianBlur
                     if ((userBlurRect[0] + userBlurRect[2] <= bmp.Width) && (userBlurRect[1] + userBlurRect[3] <= bmp.Width) && (userBlurRect[0] >= 0) & (userBlurRect[1] >= 0))
                         blurRect = new Rectangle(userBlurRect[0], userBlurRect[1], userBlurRect[2] - 1, userBlurRect[3] - 1);
                     else
-                        throw new Exception("Uncorrect rectangle value(s). Please, restart application.");
+                        throw new Exception("Incorrect rectangle value(s). Please, restart application.");
                 }
                 else if (userRectParams == "$gb_blurAll")
                     blurRect = new Rectangle(0, 0, bmp.Width - 1, bmp.Height - 1);
@@ -467,14 +466,14 @@ namespace GaussianBlur
                     goto Again;
                 }
                 else
-                    throw new Exception("Uncorrect rectangle value(s). Please, restart application.");
+                    throw new Exception("Incorrect rectangle value(s). Please, restart application.");
                 #endregion
 
                 Console.WriteLine("--------------------------------- [Summary] ---------------------------------");
-                Console.WriteLine("> Choosed image: {0} ({1} x {2})", inputFileAddr, bmp.Width, bmp.Height);
-                Console.WriteLine("> Choosed blur radius: {0}", userBlurRadius);
-                Console.WriteLine("> Choosed highlighting coefficient: {0}", highlightingCoef);
-                Console.WriteLine("> Choosed blur rectangle: x = {0} | y = {1} | width = {2} | height = {3}", blurRect.X, blurRect.Y, blurRect.Width + 1, blurRect.Height + 1);
+                Console.WriteLine("> Chosen image: {0} ({1} x {2})", inputFileAddr, bmp.Width, bmp.Height);
+                Console.WriteLine("> Chosen blur radius: {0}", userBlurRadius);
+                Console.WriteLine("> Chosen highlighting coefficient: {0}", highlightingCoef);
+                Console.WriteLine("> Chosen blur rectangle: x = {0} | y = {1} | width = {2} | height = {3}", blurRect.X, blurRect.Y, blurRect.Width + 1, blurRect.Height + 1);
                 Console.WriteLine("\n> Output file name: {0}", outputFileAddr);
                 Console.WriteLine("-----------------------------------------------------------------------------");
                 Console.Write("> If it's correct press '1', otherwise press another key: ");
@@ -600,3 +599,85 @@ namespace GaussianBlur
         }
     }
 }
+
+/*                                             IMAGE PRE-PROCESSING INFO
+ *                                                
+ * The default input image stream looks like:
+ *  54 0 5 6 4 2 3 4 6 8 7 9 3 1 15 27 255 247 145 65 3 1 8 27 29 87 33 50 105 63 78 80 55 33 0 204 111 57 15 97 36 100 0 0 2
+ * Note: number of input stream values is always proportional to 3, as we use a RGB structure.
+ * 
+ * As soon as technically image consists from pixels, and each pixels, in their turn, have R, G, B values, image looks like: 
+ *                  _______________________________________________________
+ *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
+ *                  |-------------------------------------------------------|
+ *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
+ *                  |-------------------------------------------------------|
+ *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
+ *                  |-------------------------------------------------------|
+ *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
+ *                  |-------------------------------------------------------|
+ *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
+ *                  |-------------------------------------------------------|
+ *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
+ *                  |-------------------------------------------------------|
+ *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
+ *                  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ *                                      _______ 
+ *                               Where | R G B | is one pixel.
+ *                                      ¯¯¯¯¯¯¯ 
+ * 
+ * But it's not all the stuff. Image also contain a "padding". Padding not define how image looks like, but it define, how it
+ * storing in memory. Padding is defined as a number of bytes need to move down a row of pixels, relative to the displayed image.
+ * 
+ * Actually, it looks like:
+ * 
+ * 
+ *                  | <===================== Stride ======================> |     
+ *                  | <-------- Image width --------------> |
+ *                   _______________________________________________________
+ *  Entry point --> |X                                      |///////////////|    
+ *                  |                                       |///////////////|  
+ *                  |                                       |///////////////|  
+ *                  |                                       |///////////////|  
+ *         Memory   |                                       |///// P ///////|  
+ *         Address  |                                       |///// A ///////|  
+ *           |      |                                       |///// D ///////|  
+ *           |      |              IMAGE                    |///// D ///////|  
+ *           |      |                                       |///// I ///////|  
+ *           |      |                                       |///// N ///////|  
+ *           |      |                                       |///// G ///////|  
+ *           |      |                                       |///////////////|  
+ *           ˅      |                                       |///////////////|  
+ *                  |                                       |///////////////|  
+ *                  |                                       |///////////////|  
+ *                  |                                       |///////////////|   
+ *                  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ 
+ *                                X - top right corner of image.
+ * 
+ * More info here: https://msdn.microsoft.com/en-us/library/windows/desktop/aa473780(v=vs.85).aspx
+ * 
+ * Now we know that in input image stream we should have:
+ *  [54 0  5   6 4 2   3 4 6   8 7 9  3 1 15]   [27 255 247  145 65 3  1 8 27  29 87 33  50 105 63]   [78 80 55  33 0 204  111 57 15  97 36 100  0 0 2]
+ *   |  |  |   | | |   | | |   | | |  | | |      |   |   |    |  |  |  | | |   |  |  |   |   |  |      |  |  |   |  |  |    |  |  |   |  |   |   | | | 
+ *   R  G  B   R G B   R G B   R G B  P P P      R   G   B    R  G  B  R G B   R  G  B   P   P  P      R  G  B   R  G  B    R  G  B   R  G   B   P P P
+ *
+ * But, according to Format24bppRgb, actually we have: 
+ *  [54 0  5   6 4 2   3 4 6   8 7 9  3 1 15]   [27 255 247  145 65 3  1 8 27  29 87 33  50 105 63]   [78 80 55  33 0 204  111 57 15  97 36 100  0 0 2]
+ *   |  |  |   | | |   | | |   | | |  | | |      |   |   |    |  |  |  | | |   |  |  |   |   |  |      |  |  |   |  |  |    |  |  |   |  |   |   | | | 
+ *   B  G  R   B G R   B G R   B G R  P P P      B   G   R    B  G  R  B G R   B  G  R   P   P  P      B  G  R   B  G  R    B  G  R   B  G   R   P P P
+ *   
+ * Actual image looks like (Format24bppRgb):
+ *   __________________________________________________________________
+ *  [54  0    5   | 6    4  2   | 3    4  6  | 8  7  9    | 3   1    15]  
+ *   ------------------------------------------------------------------
+ *  [27  255  247 | 145  65 3   | 1    8  27 | 29 87 33   | 50  105  63]
+ *   ------------------------------------------------------------------
+ *  [78  80   55  | 33   0  204 | 111  57 15 | 97 36 100  | 0   0     2]
+ *   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ * So all what we have to do is to create an array with H rows and W columns for every channel value (Red, Green, Blue), 
+ * and an array with H rows and (S - (W * 3)) columns for padding values. Where: W - width of image, H - height of image,
+ * S - stride length. And then fill the arrays with channel "personal" offset and step = 3.
+ * Note: from "address" [S - (S - W * 3)] to S - contains our padding. It should be saved "as is", and should be not modified. 
+ *                                                                                                                                       
+ *                                             (c) 2016 Nk185.
+ */

@@ -6,7 +6,8 @@
  * endDate:     --.02.2016
  * Version:     00.42.16
  * Modifications log:
- *  16.02.16 - Pre-processing info
+ *  17.02.16 - Useless code removed
+ *  16.02.16 - Pre-processing info 
  */
 
 using System;
@@ -35,21 +36,21 @@ namespace GaussianBlur
 
     public class GaussianDistribution
     {
-        private readonly int blurRadius;
+        private readonly int   blurRadius;
         private readonly sbyte highlightingCoef;
-        private readonly bool useTwoDemensions;
+        private readonly bool  useTwoDemensions;
          
-        private double Div = 0.0;
-        private double[] Kernel_SingleDemention;
+        private double    Div = 0.0;
+        private double[]  Kernel_SingleDemention;
         private double[,] Kernel_TwoDemention;
 
         private const int SigmaMultiply = 4; // Minimal value should be 3
-
-        public double[] GetKernel { get { return Kernel_SingleDemention; } }
+                
+        public int       GetRadius { get { return blurRadius * SigmaMultiply; } }
+        public sbyte     GetOffset { get { return highlightingCoef; } }
+        public double    GetDiv { get { return Div; } }
+        public double[]  GetKernel { get { return Kernel_SingleDemention; } }
         public double[,] GetKernel2D { get { return Kernel_TwoDemention; } }
-        public double GetDiv { get { return Div; } }
-        public sbyte GetOffset { get { return highlightingCoef; } }
-        public int GetRadius { get { return blurRadius * SigmaMultiply; } }
 
         public GaussianDistribution(int blurRadius, sbyte highlightingCoef, bool useTwoDemensions)
         {
@@ -65,9 +66,8 @@ namespace GaussianBlur
 
         private void CalculateKernel(out double[] result)
         {
-
-            double[] resKernel = new double[(this.blurRadius * SigmaMultiply) * 2 + 1];
             int iOffset = 0;
+            double[] resKernel = new double[(this.blurRadius * SigmaMultiply) * 2 + 1];            
 
             for (int i = -blurRadius * SigmaMultiply; i <= blurRadius * SigmaMultiply; i++)
             {
@@ -80,10 +80,9 @@ namespace GaussianBlur
         }
         private void CalculateKernel(out double[,] result)
         {
-
-            double[,] resKernel = new double[(this.blurRadius * SigmaMultiply) * 2 + 1, (this.blurRadius * SigmaMultiply) * 2 + 1];
             int iOffset = 0;
             int jOffset = 0;
+            double[,] resKernel = new double[(this.blurRadius * SigmaMultiply) * 2 + 1, (this.blurRadius * SigmaMultiply) * 2 + 1];
 
             for (int i = -blurRadius * SigmaMultiply; i <= blurRadius * SigmaMultiply; i++)
             {
@@ -181,7 +180,7 @@ namespace GaussianBlur
                 for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
                 {
                     double newValue = 0.0;
-                    double divisor = 0.0;
+                    double divisor  = 0.0;
                     int kernelAddr;
 
                     for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
@@ -190,16 +189,11 @@ namespace GaussianBlur
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
                         {
                             newValue += rgbValues.Red[i, j + rad] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
+                            divisor  += gd.GetKernel[kernelAddr];
                         }
-                       /* else
-                        {
-                            newValue += rgbValues.Red[i, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
-                        }*/
                     }
 
-                    rgbValues.Red[i, j] = Convert.ToByte(newValue / divisor);
+                    rgbValues.Red[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
 
                     if (rgbValues.Red[i, j] + gd.GetOffset <= 255 && rgbValues.Red[i, j] + gd.GetOffset >= 0)
@@ -220,8 +214,8 @@ namespace GaussianBlur
                 for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
                 {
                     double newValue = 0.0;
-                    double divisor = 0.0;
-                    int kernelAddr = 0;
+                    double divisor  = 0.0;
+                    int kernelAddr;
 
                     for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
                     {
@@ -230,24 +224,12 @@ namespace GaussianBlur
                         if ((i + rad >= blurRect.Y) && (i + rad <= blurRect.Y + blurRect.Height))
                         {
                             newValue += rgbValues.Red[i + rad, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
+                            divisor  += gd.GetKernel[kernelAddr];
                         }
-                       /* else
-                        {
-                            newValue += rgbValues.Red[i, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
-                        }*/
                     }
 
-                    rgbValues.Red[i, j] = Convert.ToByte(newValue / divisor);
+                    rgbValues.Red[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
-
-                   /* if (rgbValues.Red[i, j] + gd.GetOffset <= 255 && rgbValues.Red[i, j] + gd.GetOffset >= 0)
-                        rgbValues.Red[i, j] = (byte)(rgbValues.Red[i, j] + gd.GetOffset / 2);
-                    else if (rgbValues.Red[i, j] + gd.GetOffset <= 0)
-                        rgbValues.Red[i, j] = 0;
-                    else if (rgbValues.Red[i, j] + gd.GetOffset >= 255)
-                        rgbValues.Red[i, j] = 255;*/
                 }
             }
             #endregion
@@ -260,7 +242,7 @@ namespace GaussianBlur
                 for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
                 {
                     double newValue = 0.0;
-                    double divisor = 0.0;
+                    double divisor  = 0.0;
                     int kernelAddr;
 
                     for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
@@ -269,16 +251,11 @@ namespace GaussianBlur
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
                         {
                             newValue += rgbValues.Green[i, j + rad] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
+                            divisor  += gd.GetKernel[kernelAddr];
                         }
-                      /*  else
-                        {
-                            newValue += rgbValues.Green[i, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
-                        }*/
                     }
 
-                    rgbValues.Green[i, j] = Convert.ToByte(newValue / divisor);
+                    rgbValues.Green[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
 
                     if (rgbValues.Green[i, j] + gd.GetOffset <= 255 && rgbValues.Green[i, j] + gd.GetOffset >= 0)
@@ -299,8 +276,8 @@ namespace GaussianBlur
                 for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
                 {
                     double newValue = 0.0;
-                    double divisor = 0.0;
-                    int kernelAddr = 0;
+                    double divisor  = 0.0;
+                    int kernelAddr;
 
                     for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
                     {
@@ -309,25 +286,12 @@ namespace GaussianBlur
                         if ((i + rad >= blurRect.Y) && (i + rad <= blurRect.Y + blurRect.Height))
                         {
                             newValue += rgbValues.Green[i + rad, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
+                            divisor  += gd.GetKernel[kernelAddr];
                         }
-                      /*  else
-                        {
-                            newValue += rgbValues.Green[i, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
-                        }*/
-
                     }
 
-                    rgbValues.Green[i, j] = Convert.ToByte(newValue / divisor);
+                    rgbValues.Green[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
-
-                    /*if (rgbValues.Green[i, j] + gd.GetOffset <= 255 && rgbValues.Green[i, j] + gd.GetOffset >= 0)
-                        rgbValues.Green[i, j] = (byte)(rgbValues.Green[i, j] + gd.GetOffset / 2);
-                    else if (rgbValues.Green[i, j] + gd.GetOffset <= 0)
-                        rgbValues.Green[i, j] = 0;
-                    else if (rgbValues.Green[i, j] + gd.GetOffset >= 255)
-                        rgbValues.Green[i, j] = 255;*/
                 }
             }
             #endregion
@@ -340,7 +304,7 @@ namespace GaussianBlur
                 for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
                 {
                     double newValue = 0.0;
-                    double divisor = 0.0;
+                    double divisor  = 0.0;
                     int kernelAddr;
 
                     for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
@@ -349,16 +313,11 @@ namespace GaussianBlur
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
                         {
                             newValue += rgbValues.Blue[i, j + rad] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
+                            divisor  += gd.GetKernel[kernelAddr];
                         }
-                       /* else
-                        {
-                            newValue += rgbValues.Blue[i, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
-                        }*/
                     }
 
-                    rgbValues.Blue[i, j] = Convert.ToByte(newValue / divisor);
+                    rgbValues.Blue[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
 
                     if (rgbValues.Blue[i, j] + gd.GetOffset <= 255 && rgbValues.Blue[i, j] + gd.GetOffset >= 0)
@@ -380,7 +339,7 @@ namespace GaussianBlur
                 {
                     double newValue = 0.0;
                     double divisor  = 0.0;
-                    int kernelAddr  = 0;
+                    int kernelAddr;
 
                     for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
                     {
@@ -389,24 +348,12 @@ namespace GaussianBlur
                         if ((i + rad >= blurRect.Y) && (i + rad <= blurRect.Y + blurRect.Height))
                         {
                             newValue += rgbValues.Blue[i + rad, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
+                            divisor  += gd.GetKernel[kernelAddr];
                         }
-                       /* else
-                        {
-                            newValue += rgbValues.Blue[i, j] * gd.GetKernel[kernelAddr];
-                            divisor += gd.GetKernel[kernelAddr];
-                        }*/
                     }
 
-                    rgbValues.Blue[i, j] = Convert.ToByte(newValue / divisor);
+                    rgbValues.Blue[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
-
-                    /*if (rgbValues.Blue[i, j] + gd.GetOffset <= 255 && rgbValues.Blue[i, j] + gd.GetOffset >= 0)
-                        rgbValues.Blue[i, j] = (byte)(rgbValues.Blue[i, j] + gd.GetOffset / 2);
-                    else if (rgbValues.Blue[i, j] + gd.GetOffset <= 0)
-                        rgbValues.Blue[i, j] = 0;
-                    else if (rgbValues.Blue[i, j] + gd.GetOffset >= 255)
-                        rgbValues.Blue[i, j] = 255;*/
                 }
             }
             #endregion
@@ -415,10 +362,10 @@ namespace GaussianBlur
 
     class GaussianBlur
     {
-        /* This common variable should be used only for saving method */
-        public static string outputFileAddr;
-        
-        private static Stopwatch timer1;
+         
+        public static string outputFileAddr; // This common variable should be used only for saving method 
+
+        private static Stopwatch timer1 = new Stopwatch();
 
         [STAThread]
         static void Main(string[] Args)
@@ -430,17 +377,17 @@ namespace GaussianBlur
 
             if (openDlg.ShowDialog() == DialogResult.OK)
             {
-                Bitmap bmp;
-                BitmapData bmpData;
-                ColorStructure rgbValues;
-                GaussianDistribution gaussianDistribution;
+                Bitmap                 bmp;
+                BitmapData             bmpData;
+                ColorStructure         rgbValues;
+                GaussianDistribution   gaussianDistribution;
                 GaussianBlurProcessing gBlurProcessing;
-                Rectangle rect;
-                Rectangle blurRect;
+                Rectangle              rect;
+                Rectangle              blurRect;
 
-                int[] userBlurRect = new int[4];
-                int userBlurRadius;
-                sbyte highlightingCoef;
+                int[]  userBlurRect = new int[4];
+                int    userBlurRadius;
+                sbyte  highlightingCoef;
                 string userRectParams;
                 string inputFileAddr;
 
@@ -545,7 +492,7 @@ namespace GaussianBlur
                 gBlurProcessing.Done += gbp_Done;
 
                 Console.WriteLine("\n\n> Processing image. It could take awhile...");
-                timer1 = new Stopwatch();
+                
                 timer1.Start();  
                 gBlurProcessing.Start();                                
                 
@@ -564,14 +511,15 @@ namespace GaussianBlur
         }
 
         public static ColorStructure ConvertTo2D(ref BitmapData bmpData, ref Bitmap bmp)
-        {
-            ColorStructure colors = new ColorStructure();
+        {            
+            int commonOffset      = 0;            
             byte[] commonRGB      = new byte[bmpData.Stride];
+            ColorStructure colors = new ColorStructure();
+      
             colors.Red            = new byte[bmpData.Height, bmpData.Width];
             colors.Green          = new byte[bmpData.Height, bmpData.Width];
             colors.Blue           = new byte[bmpData.Height, bmpData.Width];
-            colors.GenericPadding = new byte[bmpData.Height, Math.Abs(bmpData.Stride - (bmpData.Width * 3))];
-            int commonOffset = 0;
+            colors.GenericPadding = new byte[bmpData.Height, Math.Abs(bmpData.Stride - (bmpData.Width * 3))];            
 
             for (int i = 0; i < bmpData.Height; i++)
             {
@@ -609,11 +557,11 @@ namespace GaussianBlur
             return colors;
         }
         public static byte[] ConvertToSingle(ColorStructure colors, int height, int width, int stride)
-        {
-            byte[] Res      = new byte[Math.Abs(stride) * height];
+        {            
             int redOffset   = 2;
             int greenOffset = 1;
             int blueOffset  = 0;
+            byte[] Res = new byte[Math.Abs(stride) * height];
             int paddingOffset;
 
             for (int i = 0; i < height; i++)

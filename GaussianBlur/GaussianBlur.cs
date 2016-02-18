@@ -608,7 +608,7 @@ namespace GaussianBlur
  * Note: number of input stream values is always proportional to 3, as we use a RGB structure.
  * 
  * As soon as technically image consists from pixels, and each pixels, in their turn, have R, G, B values, image looks like: 
- *                  _______________________________________________________
+ *                   _______________________________________________________
  *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |
  *                  |-------------------------------------------------------|
  *                  | R G B | R G B | R G B | R G B | R G B | R G B | R G B |

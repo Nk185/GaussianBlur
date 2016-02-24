@@ -4,6 +4,7 @@
  * Copyright:   Nk185. 2015 - 2016
  * Version:     00.42.16
  * Modifications log:
+ *  24.02.16 - Added 2D matrix support
  *  17.02.16 - Useless code removed
  *  16.02.16 - Pre-processing info 
  * Watching next lines you automatically agree with this: https://goo.gl/M5bjl6
@@ -103,17 +104,17 @@ namespace GaussianBlur
     {
         public event Action<Bitmap, BitmapData, ColorStructure> Done;
 
-        private readonly Bitmap     _Bitmap;
-        private readonly BitmapData _BitmapData;
+        protected readonly Bitmap     _Bitmap;
+        protected readonly BitmapData _BitmapData;
 
-        private GaussianDistribution _GaussianKernel;
-        private ColorStructure       _RGBValues;
-        private Rectangle            _BlurRect;
-        private Thread               _RChanelProcessing;
-        private Thread               _GChanelProcessing;
-        private Thread               _BChanelProcessing;
-        
-        private byte _FinishedChanelsCounter = 0; // This common variable should be used only for thread-control function which is: private void _ChanelDone()
+        protected GaussianDistribution _GaussianKernel;
+        protected ColorStructure _RGBValues;
+        protected Rectangle _BlurRect;
+        protected Thread _RChanelProcessing;
+        protected Thread _GChanelProcessing;
+        protected Thread _BChanelProcessing;
+
+        protected byte _FinishedChanelsCounter = 0; // This common variable should be used only for thread-control function which is: private void _ChanelDone()
 
         public GaussianBlurProcessing(GaussianDistribution gaussianKernel, ref ColorStructure rgbValues, Rectangle blurRectangle, Bitmap bmp, BitmapData bmpData)
         {
@@ -135,7 +136,7 @@ namespace GaussianBlur
             _BChanelProcessing.Start();            
         }
 
-        private void _ChanelDone()
+        protected void _ChanelDone()
         {
             if (_FinishedChanelsCounter == 3)
                 if (Done != null)
@@ -143,7 +144,7 @@ namespace GaussianBlur
         }
 
 
-        private void _ProcessRedChanel()
+        protected virtual void _ProcessRedChanel()
         {
             __ProcessRedH(this._RGBValues, this._GaussianKernel, this._BlurRect);
             __ProcessRedV(this._RGBValues, this._GaussianKernel, this._BlurRect);
@@ -152,7 +153,7 @@ namespace GaussianBlur
             _ChanelDone();
             _RChanelProcessing.Abort();
         }
-        private void _ProcessGreenChanel()
+        protected virtual void _ProcessGreenChanel()
         {
             __ProcessGreenH(this._RGBValues, this._GaussianKernel, this._BlurRect);
             __ProcessGreenV(this._RGBValues, this._GaussianKernel, this._BlurRect);
@@ -161,7 +162,7 @@ namespace GaussianBlur
             _ChanelDone();
             _GChanelProcessing.Abort();
         }
-        private void _ProcessBlueChanel()
+        protected virtual void _ProcessBlueChanel()
         {
             __ProcessBlueH(this._RGBValues, this._GaussianKernel, this._BlurRect);
             __ProcessBlueV(this._RGBValues, this._GaussianKernel, this._BlurRect);
@@ -182,7 +183,7 @@ namespace GaussianBlur
                     double divisor  = 0.0;
                     int kernelAddr;
 
-                    for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
+                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
@@ -216,7 +217,7 @@ namespace GaussianBlur
                     double divisor  = 0.0;
                     int kernelAddr;
 
-                    for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
+                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
 
@@ -244,7 +245,7 @@ namespace GaussianBlur
                     double divisor  = 0.0;
                     int kernelAddr;
 
-                    for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
+                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
@@ -278,7 +279,7 @@ namespace GaussianBlur
                     double divisor  = 0.0;
                     int kernelAddr;
 
-                    for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
+                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
 
@@ -306,7 +307,7 @@ namespace GaussianBlur
                     double divisor  = 0.0;
                     int kernelAddr;
 
-                    for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
+                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
@@ -340,7 +341,7 @@ namespace GaussianBlur
                     double divisor  = 0.0;
                     int kernelAddr;
 
-                    for (int rad = -gd.GetRadius; rad <= gd.GetRadius; rad++)
+                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
 
@@ -356,6 +357,152 @@ namespace GaussianBlur
                 }
             }
             #endregion
+        }
+    }
+    public class GaussianBlurProcessing2D : GaussianBlurProcessing
+    {
+        public GaussianBlurProcessing2D (GaussianDistribution gaussianKernel, ref ColorStructure rgbValues, Rectangle blurRectangle, Bitmap bmp, BitmapData bmpData)
+            : base(gaussianKernel, ref rgbValues, blurRectangle, bmp, bmpData)
+        {
+           
+        }
+
+        protected sealed override void _ProcessRedChanel()
+        {
+            for (int i = this._BlurRect.Y; i <= this._BlurRect.Y + this._BlurRect.Height; i++)
+            {
+                for (int j = this._BlurRect.X; j <= this._BlurRect.X + this._BlurRect.Width; j++)
+                {
+                    double newValue = 0.0;
+                    double divisor = 0.0;
+                    int kernelAddrX;
+                    int kernelAddrY;
+
+                    for (int x = -(this._GaussianKernel.GetRadius - 1); x <= this._GaussianKernel.GetRadius - 1; x++)
+                    {
+                        for (int y = -(this._GaussianKernel.GetRadius - 1); y <= this._GaussianKernel.GetRadius - 1; y++)
+                        {
+                            kernelAddrX = this._GaussianKernel.GetRadius + x;
+                            kernelAddrY = this._GaussianKernel.GetRadius + y;
+
+
+                            if ((j + x >= this._BlurRect.X) && (j + x <= this._BlurRect.X + this._BlurRect.Width) && 
+                                (i + y >= this._BlurRect.Y) && (i + y <= this._BlurRect.Y + this._BlurRect.Height))
+                            {
+                                newValue += this._RGBValues.Red[i + y, j + x] * this._GaussianKernel.GetKernel2D[kernelAddrY, kernelAddrX];
+                                divisor += this._GaussianKernel.GetKernel2D[kernelAddrY, kernelAddrX];
+                            }
+                        }
+                    }
+
+                    this._RGBValues.Red[i, j] = (byte)(newValue / divisor);
+                    newValue = 0.0;
+
+                    if (this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset <= 255 && this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset >= 0)
+                        this._RGBValues.Red[i, j] = (byte)(this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset);
+                    else if (this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset <= 0)
+                        this._RGBValues.Red[i, j] = 0;
+                    else if (this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset >= 255)
+                        this._RGBValues.Red[i, j] = 255;                    
+                }
+
+                Console.WriteLine("{0} out {1}", i, this._BlurRect.Y + this._BlurRect.Height);
+            }
+
+            _FinishedChanelsCounter++;
+            _ChanelDone();
+            _RChanelProcessing.Abort();
+        }
+
+        protected sealed override void _ProcessGreenChanel()
+        {
+
+            for (int i = this._BlurRect.Y; i <= this._BlurRect.Y + this._BlurRect.Height; i++)
+            {
+                for (int j = this._BlurRect.X; j <= this._BlurRect.X + this._BlurRect.Width; j++)
+                {
+                    double newValue = 0.0;
+                    double divisor = 0.0;
+                    int kernelAddrX;
+                    int kernelAddrY;
+
+                    for (int x = -(this._GaussianKernel.GetRadius - 1); x <= this._GaussianKernel.GetRadius - 1; x++)
+                    {
+                        for (int y = -(this._GaussianKernel.GetRadius - 1); y <= this._GaussianKernel.GetRadius - 1; y++)
+                        {
+                            kernelAddrX = this._GaussianKernel.GetRadius + x;
+                            kernelAddrY = this._GaussianKernel.GetRadius + y;
+
+
+                            if ((j + x >= this._BlurRect.X) && (j + x <= this._BlurRect.X + this._BlurRect.Width) &&
+                                (i + y >= this._BlurRect.Y) && (i + y <= this._BlurRect.Y + this._BlurRect.Height))
+                            {
+                                newValue += this._RGBValues.Green[i + y, j + x] * this._GaussianKernel.GetKernel2D[kernelAddrY, kernelAddrX];
+                                divisor += this._GaussianKernel.GetKernel2D[kernelAddrY, kernelAddrX];
+                            }
+                        }
+                    }
+
+                    this._RGBValues.Green[i, j] = (byte)(newValue / divisor);
+                    newValue = 0.0;
+
+                    if (this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset <= 255 && this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset >= 0)
+                        this._RGBValues.Green[i, j] = (byte)(this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset);
+                    else if (this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset <= 0)
+                        this._RGBValues.Green[i, j] = 0;
+                    else if (this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset >= 255)
+                        this._RGBValues.Green[i, j] = 255;
+                }
+            }
+
+            _FinishedChanelsCounter++;
+            _ChanelDone();
+            _GChanelProcessing.Abort();
+        }
+
+        protected sealed override void _ProcessBlueChanel()
+        {
+            for (int i = this._BlurRect.Y; i <= this._BlurRect.Y + this._BlurRect.Height; i++)
+            {
+                for (int j = this._BlurRect.X; j <= this._BlurRect.X + this._BlurRect.Width; j++)
+                {
+                    double newValue = 0.0;
+                    double divisor = 0.0;
+                    int kernelAddrX;
+                    int kernelAddrY;
+
+                    for (int x = -(this._GaussianKernel.GetRadius - 1); x <= this._GaussianKernel.GetRadius - 1; x++)
+                    {
+                        for (int y = -(this._GaussianKernel.GetRadius - 1); y <= this._GaussianKernel.GetRadius - 1; y++)
+                        {
+                            kernelAddrX = this._GaussianKernel.GetRadius + x;
+                            kernelAddrY = this._GaussianKernel.GetRadius + y;
+
+
+                            if ((j + x >= this._BlurRect.X) && (j + x <= this._BlurRect.X + this._BlurRect.Width) &&
+                                (i + y >= this._BlurRect.Y) && (i + y <= this._BlurRect.Y + this._BlurRect.Height))
+                            {
+                                newValue += this._RGBValues.Blue[i + y, j + x] * this._GaussianKernel.GetKernel2D[kernelAddrY, kernelAddrX];
+                                divisor += this._GaussianKernel.GetKernel2D[kernelAddrY, kernelAddrX];
+                            }
+                        }
+                    }
+
+                    this._RGBValues.Blue[i, j] = (byte)(newValue / divisor);
+                    newValue = 0.0;
+
+                    if (this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset <= 255 && this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset >= 0)
+                        this._RGBValues.Blue[i, j] = (byte)(this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset);
+                    else if (this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset <= 0)
+                        this._RGBValues.Blue[i, j] = 0;
+                    else if (this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset >= 255)
+                        this._RGBValues.Blue[i, j] = 255;
+                }
+            }
+
+            _FinishedChanelsCounter++;
+            _ChanelDone();
+            _BChanelProcessing.Abort();
         }
     }
 

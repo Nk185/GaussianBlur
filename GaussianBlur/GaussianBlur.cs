@@ -4,6 +4,7 @@
  * Copyright:   Nk185. 2015 - 2016
  * Version:     00.42.16
  * Modifications log:
+ *  29.02.16 - Calculations (1D) improvements
  *  24.02.16 - Added 2D matrix support
  *  17.02.16 - Useless code removed
  *  16.02.16 - Pre-processing info 
@@ -116,7 +117,7 @@ namespace GaussianBlur
 
         protected byte _FinishedChanelsCounter = 0; // This common variable should be used only for thread-control function which is: private void _ChanelDone()
 
-        public GaussianBlurProcessing(GaussianDistribution gaussianKernel, ref ColorStructure rgbValues, Rectangle blurRectangle, Bitmap bmp, BitmapData bmpData)
+        public GaussianBlurProcessing(GaussianDistribution gaussianKernel, ColorStructure rgbValues, Rectangle blurRectangle, Bitmap bmp, BitmapData bmpData)
         {
             this._GaussianKernel = gaussianKernel;
             this._RGBValues      = rgbValues;
@@ -146,8 +147,8 @@ namespace GaussianBlur
 
         protected virtual void _ProcessRedChanel()
         {
-            __ProcessRedH(this._RGBValues, this._GaussianKernel, this._BlurRect);
-            __ProcessRedV(this._RGBValues, this._GaussianKernel, this._BlurRect);
+            __ProcessH(ref this._RGBValues.Red, this._GaussianKernel, this._BlurRect);
+            __ProcessV(ref this._RGBValues.Red, this._GaussianKernel, this._BlurRect);
 
             _FinishedChanelsCounter++;
             _ChanelDone();
@@ -155,8 +156,8 @@ namespace GaussianBlur
         }
         protected virtual void _ProcessGreenChanel()
         {
-            __ProcessGreenH(this._RGBValues, this._GaussianKernel, this._BlurRect);
-            __ProcessGreenV(this._RGBValues, this._GaussianKernel, this._BlurRect);
+            __ProcessH(ref this._RGBValues.Green, this._GaussianKernel, this._BlurRect);
+            __ProcessV(ref this._RGBValues.Green, this._GaussianKernel, this._BlurRect);
 
             _FinishedChanelsCounter++;
             _ChanelDone();
@@ -164,205 +165,100 @@ namespace GaussianBlur
         }
         protected virtual void _ProcessBlueChanel()
         {
-            __ProcessBlueH(this._RGBValues, this._GaussianKernel, this._BlurRect);
-            __ProcessBlueV(this._RGBValues, this._GaussianKernel, this._BlurRect);
+            __ProcessH(ref this._RGBValues.Blue, this._GaussianKernel, this._BlurRect);
+            __ProcessV(ref this._RGBValues.Blue, this._GaussianKernel, this._BlurRect);
 
             _FinishedChanelsCounter++;
             _ChanelDone();
             _BChanelProcessing.Abort();
         }
 
-        private void __ProcessRedH(ColorStructure rgbValues, GaussianDistribution gd, Rectangle blurRect)
+        private void __ProcessH(ref byte[,] rgbValues, GaussianDistribution gd, Rectangle blurRect)
         {
             #region Left -> Right
+            double newValue = 0.0;
+            double divisor = 0.0;
+            int kernelAddr;
+            byte[,] bufferCh = new byte[rgbValues.GetLength(0), rgbValues.GetLength(1)];
+
+            for (int i = 0; i < rgbValues.GetLength(0); i++)
+                for (int j = 0; j < rgbValues.GetLength(1); j++)
+                    bufferCh[i, j] = rgbValues[i, j];
+
             for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
             {
                 for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
-                {
-                    double newValue = 0.0;
-                    double divisor  = 0.0;
-                    int kernelAddr;
-
+                {              
+                    
                     for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
                         {
-                            newValue += rgbValues.Red[i, j + rad] * gd.GetKernel[kernelAddr];
-                            divisor  += gd.GetKernel[kernelAddr];
+                            newValue += rgbValues[i, j + rad] * gd.GetKernel[kernelAddr];
+                            divisor += gd.GetKernel[kernelAddr];
                         }
                     }
 
-                    rgbValues.Red[i, j] = (byte)(newValue / divisor);
+                    bufferCh[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
+                    divisor = 0.0;
 
-                    if (rgbValues.Red[i, j] + gd.GetOffset <= 255 && rgbValues.Red[i, j] + gd.GetOffset >= 0)
-                        rgbValues.Red[i, j] = (byte)(rgbValues.Red[i, j] + gd.GetOffset );
-                    else if (rgbValues.Red[i, j] + gd.GetOffset <= 0)
-                        rgbValues.Red[i, j] = 0;
-                    else if (rgbValues.Red[i, j] + gd.GetOffset >= 255)
-                        rgbValues.Red[i, j] = 255;           
+                    if (gd.GetOffset != 0)
+                    if (bufferCh[i, j] + gd.GetOffset <= 255 && bufferCh[i, j] + gd.GetOffset >= 0)
+                        bufferCh[i, j] = (byte)(bufferCh[i, j] + gd.GetOffset);
+                    else if (bufferCh[i, j] + gd.GetOffset <= 0)
+                        bufferCh[i, j] = 0;
+                    else if (bufferCh[i, j] + gd.GetOffset >= 255)
+                        bufferCh[i, j] = 255;
                 }
             }
+
+            rgbValues = bufferCh;
             #endregion
         }
-        private void __ProcessRedV(ColorStructure rgbValues, GaussianDistribution gd, Rectangle blurRect)
+
+        private void __ProcessV(ref byte[,] rgbValues, GaussianDistribution gd, Rectangle blurRect)
         {
             #region Up -> Down
+            double newValue = 0.0;
+            double divisor = 0.0;
+            int kernelAddr;
+            byte[,] bufferCh = new byte[rgbValues.GetLength(0), rgbValues.GetLength(1)];
+
+            for (int i = 0; i < rgbValues.GetLength(0); i++)
+                for (int j = 0; j < rgbValues.GetLength(1); j++)
+                    bufferCh[i, j] = rgbValues[i, j];
+
             for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
             {
                 for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
                 {
-                    double newValue = 0.0;
-                    double divisor  = 0.0;
-                    int kernelAddr;
-
                     for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
 
                         if ((i + rad >= blurRect.Y) && (i + rad <= blurRect.Y + blurRect.Height))
                         {
-                            newValue += rgbValues.Red[i + rad, j] * gd.GetKernel[kernelAddr];
-                            divisor  += gd.GetKernel[kernelAddr];
+                            newValue += rgbValues[i + rad, j] * gd.GetKernel[kernelAddr];
+                            divisor += gd.GetKernel[kernelAddr];
                         }
                     }
 
-                    rgbValues.Red[i, j] = (byte)(newValue / divisor);
+                    bufferCh[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
+                    divisor = 0.0;
                 }
             }
-            #endregion
-        }
-        private void __ProcessGreenH(ColorStructure rgbValues, GaussianDistribution gd, Rectangle blurRect)
-        {
-            #region Left -> Right
-            for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
-            {
-                for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
-                {
-                    double newValue = 0.0;
-                    double divisor  = 0.0;
-                    int kernelAddr;
 
-                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
-                    {
-                        kernelAddr = rad + gd.GetRadius;
-                        if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
-                        {
-                            newValue += rgbValues.Green[i, j + rad] * gd.GetKernel[kernelAddr];
-                            divisor  += gd.GetKernel[kernelAddr];
-                        }
-                    }
-
-                    rgbValues.Green[i, j] = (byte)(newValue / divisor);
-                    newValue = 0.0;
-
-                    if (rgbValues.Green[i, j] + gd.GetOffset <= 255 && rgbValues.Green[i, j] + gd.GetOffset >= 0)
-                        rgbValues.Green[i, j] = (byte)(rgbValues.Green[i, j] + gd.GetOffset );
-                    else if (rgbValues.Green[i, j] + gd.GetOffset <= 0)
-                        rgbValues.Green[i, j] = 0;
-                    else if (rgbValues.Green[i, j] + gd.GetOffset >= 255)
-                        rgbValues.Green[i, j] = 255;
-                }
-            }
-            #endregion
-        }
-        private void __ProcessGreenV(ColorStructure rgbValues, GaussianDistribution gd, Rectangle blurRect)
-        {
-            #region Up -> Down
-            for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
-            {
-                for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
-                {
-                    double newValue = 0.0;
-                    double divisor  = 0.0;
-                    int kernelAddr;
-
-                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
-                    {
-                        kernelAddr = rad + gd.GetRadius;
-
-                        if ((i + rad >= blurRect.Y) && (i + rad <= blurRect.Y + blurRect.Height))
-                        {
-                            newValue += rgbValues.Green[i + rad, j] * gd.GetKernel[kernelAddr];
-                            divisor  += gd.GetKernel[kernelAddr];
-                        }
-                    }
-
-                    rgbValues.Green[i, j] = (byte)(newValue / divisor);
-                    newValue = 0.0;
-                }
-            }
-            #endregion
-        }
-        private void __ProcessBlueH(ColorStructure rgbValues, GaussianDistribution gd, Rectangle blurRect)
-        {
-            #region Left -> Right
-            for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
-            {
-                for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
-                {
-                    double newValue = 0.0;
-                    double divisor  = 0.0;
-                    int kernelAddr;
-
-                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
-                    {
-                        kernelAddr = rad + gd.GetRadius;
-                        if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
-                        {
-                            newValue += rgbValues.Blue[i, j + rad] * gd.GetKernel[kernelAddr];
-                            divisor  += gd.GetKernel[kernelAddr];
-                        }
-                    }
-
-                    rgbValues.Blue[i, j] = (byte)(newValue / divisor);
-                    newValue = 0.0;
-
-                    if (rgbValues.Blue[i, j] + gd.GetOffset <= 255 && rgbValues.Blue[i, j] + gd.GetOffset >= 0)
-                        rgbValues.Blue[i, j] = (byte)(rgbValues.Blue[i, j] + gd.GetOffset );
-                    else if (rgbValues.Blue[i, j] + gd.GetOffset <= 0)
-                        rgbValues.Blue[i, j] = 0;
-                    else if (rgbValues.Blue[i, j] + gd.GetOffset >= 255)
-                        rgbValues.Blue[i, j] = 255;
-                }
-            }
-            #endregion*/
-        }
-        private void __ProcessBlueV(ColorStructure rgbValues, GaussianDistribution gd, Rectangle blurRect)
-        {
-            #region Up -> Down
-            for (int j = blurRect.X; j <= blurRect.X + blurRect.Width; j++)
-            {
-                for (int i = blurRect.Y; i <= blurRect.Y + blurRect.Height; i++)
-                {
-                    double newValue = 0.0;
-                    double divisor  = 0.0;
-                    int kernelAddr;
-
-                    for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
-                    {
-                        kernelAddr = rad + gd.GetRadius;
-
-                        if ((i + rad >= blurRect.Y) && (i + rad <= blurRect.Y + blurRect.Height))
-                        {
-                            newValue += rgbValues.Blue[i + rad, j] * gd.GetKernel[kernelAddr];
-                            divisor  += gd.GetKernel[kernelAddr];
-                        }
-                    }
-
-                    rgbValues.Blue[i, j] = (byte)(newValue / divisor);
-                    newValue = 0.0;
-                }
-            }
+            rgbValues = bufferCh;
             #endregion
         }
     }
     public class GaussianBlurProcessing2D : GaussianBlurProcessing
     {
-        public GaussianBlurProcessing2D (GaussianDistribution gaussianKernel, ref ColorStructure rgbValues, Rectangle blurRectangle, Bitmap bmp, BitmapData bmpData)
-            : base(gaussianKernel, ref rgbValues, blurRectangle, bmp, bmpData)
+        public GaussianBlurProcessing2D (GaussianDistribution gaussianKernel, ColorStructure rgbValues, Rectangle blurRectangle, Bitmap bmp, BitmapData bmpData)
+            : base(gaussianKernel, rgbValues, blurRectangle, bmp, bmpData)
         {
            
         }
@@ -518,7 +414,7 @@ namespace GaussianBlur
         {
         Again:
             OpenFileDialog openDlg = new OpenFileDialog();
-            openDlg.Filter         = "JPEG (*.jpg)|*.jpg";
+            openDlg.Filter         = "All(*.*)|*.*";
             openDlg.Title          = "Select your image to blur: ";
 
             if (openDlg.ShowDialog() == DialogResult.OK)
@@ -632,9 +528,9 @@ namespace GaussianBlur
 
                 gaussianDistribution = new GaussianDistribution(userBlurRadius, highlightingCoef, false);
                 rect                 = new Rectangle(0, 0, bmp.Width, bmp.Height);
-                bmpData              = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);                
+                bmpData              = bmp.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);                
                 rgbValues            = ConvertTo2D(ref bmpData, ref bmp);
-                gBlurProcessing      = new GaussianBlurProcessing(gaussianDistribution, ref rgbValues, blurRect, bmp, bmpData);
+                gBlurProcessing      = new GaussianBlurProcessing(gaussianDistribution, rgbValues, blurRect, bmp, bmpData);
                 gBlurProcessing.Done += gbp_Done;
 
                 Console.WriteLine("\n\n> Processing image. It could take awhile...");
@@ -653,7 +549,7 @@ namespace GaussianBlur
 
             Marshal.Copy(ConvertToSingle(rgbValues, Bmp.Height, Bmp.Width, BmpData.Stride), 0, BmpData.Scan0, Math.Abs(BmpData.Height * BmpData.Stride));
             Bmp.UnlockBits(BmpData);
-            Bmp.Save(outputFileAddr);
+            Bmp.Save(outputFileAddr/*, ImageFormat.Png*/);
         }
 
         public static ColorStructure ConvertTo2D(ref BitmapData bmpData, ref Bitmap bmp)

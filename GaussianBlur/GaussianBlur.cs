@@ -4,6 +4,7 @@
  * Copyright:   Nk185. 2015 - 2016
  * Version:     00.42.16
  * Modifications log:
+ *  10.03.16 - Calculations (2D) improvements
  *  29.02.16 - Calculations (1D) improvements
  *  24.02.16 - Added 2D matrix support
  *  17.02.16 - Useless code removed
@@ -193,6 +194,7 @@ namespace GaussianBlur
                     for (int rad = -(gd.GetRadius - 1); rad <= gd.GetRadius - 1; rad++)
                     {
                         kernelAddr = rad + gd.GetRadius;
+
                         if (j + rad >= blurRect.X && j + rad <= blurRect.X + blurRect.Width)
                         {
                             newValue += rgbValues[i, j + rad] * gd.GetKernel[kernelAddr];
@@ -265,6 +267,12 @@ namespace GaussianBlur
 
         protected sealed override void _ProcessRedChanel()
         {
+            byte[,] bufferCh = new byte[this._RGBValues.Red.GetLength(0), this._RGBValues.Red.GetLength(1)];
+            
+            for (int i = 0; i < bufferCh.GetLength(0); i++)
+                for (int j = 0; j < bufferCh.GetLength(1); j++)
+                    bufferCh[i, j] = this._RGBValues.Red[i, j];
+
             for (int i = this._BlurRect.Y; i <= this._BlurRect.Y + this._BlurRect.Height; i++)
             {
                 for (int j = this._BlurRect.X; j <= this._BlurRect.X + this._BlurRect.Width; j++)
@@ -291,20 +299,21 @@ namespace GaussianBlur
                         }
                     }
 
-                    this._RGBValues.Red[i, j] = (byte)(newValue / divisor);
+                    bufferCh[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
 
-                    if (this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset <= 255 && this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset >= 0)
-                        this._RGBValues.Red[i, j] = (byte)(this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset);
-                    else if (this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset <= 0)
-                        this._RGBValues.Red[i, j] = 0;
-                    else if (this._RGBValues.Red[i, j] + this._GaussianKernel.GetOffset >= 255)
-                        this._RGBValues.Red[i, j] = 255;                    
+                    if (bufferCh[i, j] + this._GaussianKernel.GetOffset <= 255 && bufferCh[i, j] + this._GaussianKernel.GetOffset >= 0)
+                        bufferCh[i, j] = (byte)(bufferCh[i, j] + this._GaussianKernel.GetOffset);
+                    else if (bufferCh[i, j] + this._GaussianKernel.GetOffset <= 0)
+                        bufferCh[i, j] = 0;
+                    else if (bufferCh[i, j] + this._GaussianKernel.GetOffset >= 255)
+                        bufferCh[i, j] = 255;                    
                 }
 
                 Console.WriteLine("{0} out {1}", i, this._BlurRect.Y + this._BlurRect.Height);
             }
 
+            this._RGBValues.Red = bufferCh;
             _FinishedChanelsCounter++;
             _ChanelDone();
             _RChanelProcessing.Abort();
@@ -312,6 +321,11 @@ namespace GaussianBlur
 
         protected sealed override void _ProcessGreenChanel()
         {
+            byte[,] bufferCh = new byte[this._RGBValues.Green.GetLength(0), this._RGBValues.Green.GetLength(1)];
+
+            for (int i = 0; i < bufferCh.GetLength(0); i++)
+                for (int j = 0; j < bufferCh.GetLength(1); j++)
+                    bufferCh[i, j] = this._RGBValues.Green[i, j];
 
             for (int i = this._BlurRect.Y; i <= this._BlurRect.Y + this._BlurRect.Height; i++)
             {
@@ -339,18 +353,19 @@ namespace GaussianBlur
                         }
                     }
 
-                    this._RGBValues.Green[i, j] = (byte)(newValue / divisor);
+                    bufferCh[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
 
-                    if (this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset <= 255 && this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset >= 0)
-                        this._RGBValues.Green[i, j] = (byte)(this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset);
-                    else if (this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset <= 0)
-                        this._RGBValues.Green[i, j] = 0;
-                    else if (this._RGBValues.Green[i, j] + this._GaussianKernel.GetOffset >= 255)
-                        this._RGBValues.Green[i, j] = 255;
+                    if (bufferCh[i, j] + this._GaussianKernel.GetOffset <= 255 && bufferCh[i, j] + this._GaussianKernel.GetOffset >= 0)
+                        bufferCh[i, j] = (byte)(bufferCh[i, j] + this._GaussianKernel.GetOffset);
+                    else if (bufferCh[i, j] + this._GaussianKernel.GetOffset <= 0)
+                        bufferCh[i, j] = 0;
+                    else if (bufferCh[i, j] + this._GaussianKernel.GetOffset >= 255)
+                        bufferCh[i, j] = 255;   
                 }
             }
 
+            this._RGBValues.Green = bufferCh;
             _FinishedChanelsCounter++;
             _ChanelDone();
             _GChanelProcessing.Abort();
@@ -358,6 +373,12 @@ namespace GaussianBlur
 
         protected sealed override void _ProcessBlueChanel()
         {
+            byte[,] bufferCh = new byte[this._RGBValues.Blue.GetLength(0), this._RGBValues.Blue.GetLength(1)];
+
+            for (int i = 0; i < bufferCh.GetLength(0); i++)
+                for (int j = 0; j < bufferCh.GetLength(1); j++)
+                    bufferCh[i, j] = this._RGBValues.Blue[i, j];
+
             for (int i = this._BlurRect.Y; i <= this._BlurRect.Y + this._BlurRect.Height; i++)
             {
                 for (int j = this._BlurRect.X; j <= this._BlurRect.X + this._BlurRect.Width; j++)
@@ -384,18 +405,19 @@ namespace GaussianBlur
                         }
                     }
 
-                    this._RGBValues.Blue[i, j] = (byte)(newValue / divisor);
+                    bufferCh[i, j] = (byte)(newValue / divisor);
                     newValue = 0.0;
 
-                    if (this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset <= 255 && this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset >= 0)
-                        this._RGBValues.Blue[i, j] = (byte)(this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset);
-                    else if (this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset <= 0)
-                        this._RGBValues.Blue[i, j] = 0;
-                    else if (this._RGBValues.Blue[i, j] + this._GaussianKernel.GetOffset >= 255)
-                        this._RGBValues.Blue[i, j] = 255;
+                    if (bufferCh[i, j] + this._GaussianKernel.GetOffset <= 255 && bufferCh[i, j] + this._GaussianKernel.GetOffset >= 0)
+                        bufferCh[i, j] = (byte)(bufferCh[i, j] + this._GaussianKernel.GetOffset);
+                    else if (bufferCh[i, j] + this._GaussianKernel.GetOffset <= 0)
+                        bufferCh[i, j] = 0;
+                    else if (bufferCh[i, j] + this._GaussianKernel.GetOffset >= 255)
+                        bufferCh[i, j] = 255;   
                 }
             }
 
+            this._RGBValues.Blue = bufferCh;
             _FinishedChanelsCounter++;
             _ChanelDone();
             _BChanelProcessing.Abort();
@@ -526,11 +548,11 @@ namespace GaussianBlur
                     goto Again;
                 }
 
-                gaussianDistribution = new GaussianDistribution(userBlurRadius, highlightingCoef, false);
+                gaussianDistribution = new GaussianDistribution(userBlurRadius, highlightingCoef, true);
                 rect                 = new Rectangle(0, 0, bmp.Width, bmp.Height);
                 bmpData              = bmp.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);                
                 rgbValues            = ConvertTo2D(ref bmpData, ref bmp);
-                gBlurProcessing      = new GaussianBlurProcessing(gaussianDistribution, rgbValues, blurRect, bmp, bmpData);
+                gBlurProcessing      = new GaussianBlurProcessing2D(gaussianDistribution, rgbValues, blurRect, bmp, bmpData);
                 gBlurProcessing.Done += gbp_Done;
 
                 Console.WriteLine("\n\n> Processing image. It could take awhile...");
